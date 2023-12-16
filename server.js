@@ -2,23 +2,38 @@ const express = require("express");
 const app = express();
 const port = 3000;
 const path = require('path');
+const exphbs = require ('express-handlebars')
+app.engine('hbs', exphbs({ extname: '.hbs' }));
+app.set('view engine', 'hbs');
 var mysql      = require('mysql');
+app.set('views', __dirname + '/views');
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
   password : '',
-  database : 'news'
+  database : 'imen'
 });
 
-connection.connect();
-
-
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "views/index.html"));
+connection.connect((err) =>  {
+  if (err) throw err;
+  console.log('connecté à MySQL!');
 });
+
+// Récupérer et trier les actualités par date depuis la base de données
+app.get('/', (req, res) => {
+  connection.query('SELECT * FROM actualites', (err, results) => {
+    if (err) {
+      console.error('Error retrieving news:', err);
+      return res.status(500).send('Server error');
+    }
+    
+    res.render('home', { actualites: results });
+  });
+});
+
 
 app.get("/add", (req, res) => {
+  res.render('add');
   res.sendFile(path.join(__dirname, "views/add.html"));
 });
 
